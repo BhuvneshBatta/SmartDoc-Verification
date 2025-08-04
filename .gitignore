@@ -1,0 +1,17 @@
+# Build and Eclipse stuff
+/build/
+*.class
+*.log
+.settings/
+.project
+.classpath
+
+# OS files
+.DS_Store
+
+# IDE files
+*.iml
+.idea/
+
+# JARs (optional – if not built manually)
+*.j

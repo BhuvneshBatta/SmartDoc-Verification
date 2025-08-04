@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload &amp; Verify Files</title>
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #001f3f;           /* navy blue */
+      font-family: sans-serif;
+    }
+    .upload-container {
+      background: #f5f5dc;           /* beige */
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      max-width: 450px;
+      width: 100%;
+      text-align: center;
+    }
+    .upload-container h1 {
+      margin: 0 0 1.5rem;
+      font-size: 1.75rem;
+      color: #001f3f;
+    }
+    #chooseBtn {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+    #chooseBtn:hover {
+      background: #eee;
+    }
+
+    /* hide verify until after upload */
+    #verifyBtn {
+      display: none;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 1.5rem;
+    }
+    .button-group button {
+      flex: 1;
+      padding: 0.75rem;
+      font-size: 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      border: none;
+    }
+    /* Upload left, Verify right */
+    #uploadBtn {
+      background: #4CAF50;
+      color: white;
+      margin-right: 0.5rem;
+    }
+    #uploadBtn:hover {
+      background: #45A049;
+    }
+    #verifyBtn {
+      background: #ff9800;
+      color: white;
+      margin-left: 0.5rem;
+    }
+    #verifyBtn:hover {
+      background: #e68a00;
+    }
+
+    #fileList {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 150px;
+      overflow-y: auto;
+      text-align: left;
+    }
+    #fileList li {
+      display: flex;
+      justify-content: space-between;
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+    .remove-btn {
+      background: none;
+      border: none;
+      color: #c00;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    #fileInput { display: none; }
+
+    #successToast {
+      display: none;
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: #4CAF50;
+      color: #fff;
+      padding: 1rem 1.5rem;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="upload-container">
+    <h1>Upload &amp; Verify Files</h1>
+    <button id="chooseBtn">Choose files</button>
+    <ul id="fileList"></ul>
+
+    <div class="button-group">
+      <button id="uploadBtn">Upload</button>
+      <button id="verifyBtn">Verify</button>
+    </div>
+
+    <input type="file" id="fileInput" multiple>
+  </div>
+
+  <div id="successToast">Files uploaded successfully!</div>
+
+  <script>
+    const fileInput  = document.getElementById('fileInput');
+    const chooseBtn  = document.getElementById('chooseBtn');
+    const fileList   = document.getElementById('fileList');
+    const uploadBtn  = document.getElementById('uploadBtn');
+    const verifyBtn  = document.getElementById('verifyBtn');
+    const toast      = document.getElementById('successToast');
+    let filesArray   = [];
+
+    function updateFileList() {
+      fileList.innerHTML = '';
+      filesArray.forEach((file, i) => {
+        const li = document.createElement('li');
+        li.textContent = file.name;
+        const btn = document.createElement('button');
+        btn.textContent = '×';
+        btn.className = 'remove-btn';
+        btn.onclick = () => {
+          filesArray.splice(i, 1);
+          updateFileList();
+        };
+        li.appendChild(btn);
+        fileList.appendChild(li);
+      });
+    }
+
+    function buildFormData() {
+      const fd = new FormData();
+      filesArray.forEach(f => fd.append('files', f));
+      fd.append('action', 'upload');
+      return fd;
+    }
+
+    chooseBtn.onclick = () => fileInput.click();
+    fileInput.onchange = () => {
+      Array.from(fileInput.files).forEach(f => {
+        if (!filesArray.some(x =>
+          x.name === f.name &&
+          x.size === f.size &&
+          x.lastModified === f.lastModified
+        )) filesArray.push(f);
+      });
+      updateFileList();
+      fileInput.value = '';
+    };
+
+    const uploadUrl = './upload';
+
+    uploadBtn.onclick = async () => {
+      if (!filesArray.length) {
+        return alert('Please select at least one file.');
+      }
+      const res = await fetch(uploadUrl, {
+        method: 'POST',
+        body: buildFormData()
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        return alert(`Upload failed ${res.status}: ${err}`);
+      }
+      // show toast + reveal Verify
+      toast.style.display = 'block';
+      setTimeout(() => toast.style.display = 'none', 3000);
+      verifyBtn.style.display = 'inline-block';
+      filesArray = [];
+      updateFileList();
+    };
+
+    verifyBtn.onclick = async () => {
+      const win = window.open(
+        '', 'verifyWin',
+        `width=${screen.availWidth/2},height=${screen.availHeight},left=0,top=0`
+      );
+      try {
+        const res = await fetch(`${uploadUrl}?action=verify`, { method: 'POST' });
+        if (!res.ok) {
+          const err = await res.text();
+          return win.document.write(`<pre style="color:red;">Verify failed ${res.status}: ${err}</pre>`);
+        }
+        const html = await res.text();
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+      } catch (e) {
+        win.document.write(`<pre style="color:red;">Network error: ${e}</pre>`);
+      }
+    };
+  </script>
+
+</body>
+</html>

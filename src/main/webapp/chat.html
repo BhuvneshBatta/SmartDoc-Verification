@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ChatGPT Demo</title>
+  <style>
+    body { font-family:sans-serif; background:#f0f0f0; display:flex; flex-direction:column; align-items:center; padding:2rem; }
+    #chat { width: 600px; max-width:90%; background:#fff; border:1px solid #ccc; border-radius:8px; padding:1rem; }
+    #messages { height: 300px; overflow-y:auto; border:1px solid #eee; padding:1rem; margin-bottom:1rem; }
+    #messages p { margin: .5rem 0; }
+    #user-input { width:100%; padding:.5rem; font-size:1rem; }
+    #send { margin-top:.5rem; padding:.5rem 1rem; }
+  </style>
+</head>
+<body>
+
+  <div id="chat">
+    <div id="messages"></div>
+    <input id="user-input" type="text" placeholder="Type your question…" />
+    <button id="send">Send</button>
+  </div>
+
+  <script>
+    const msgs = document.getElementById('messages');
+    const input = document.getElementById('user-input');
+    document.getElementById('send').onclick = async () => {
+      const text = input.value.trim();
+      if (!text) return;
+      // show the user’s question
+      msgs.innerHTML += `<p><strong>You:</strong> ${text}</p>`;
+      input.value = '';
+      // call the servlet
+      const res = await fetch('./chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'message=' + encodeURIComponent(text)
+      });
+      const data = await res.json();
+      msgs.innerHTML += `<p><strong>GPT:</strong> ${data.reply}</p>`;
+      msgs.scrollTop = msgs.scrollHeight;
+    };
+  </script>
+
+</body>
+</html>
