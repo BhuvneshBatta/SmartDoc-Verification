@@ -103,3 +103,10 @@ http://localhost:8080/FileUploader/upload.html
 3. **Extract Content** using Apache PDFBox / DOCX parser  
 4. **Send Content to ChatGPT API** to generate summary  
 5. **Display Summary**
+
+---
+
+## ⚡ License
+
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+
