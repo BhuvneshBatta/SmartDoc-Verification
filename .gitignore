@@ -1,17 +1,16 @@
-# Build and Eclipse stuff
+# Ignore build artifacts
 /build/
 *.class
-*.log
-.settings/
-.project
-.classpath
 
-# OS files
+# Ignore logs and OS files
+*.log
 .DS_Store
 
-# IDE files
+# Ignore IDE-specific files
 *.iml
 .idea/
+.settings/
 
-# JARs (optional – if not built manually)
-*.j
+# Optional: Ignore JARs if not version controlled
+*.jar
+
